@@ -25,6 +25,17 @@ print_newline() {
     printf '\n'
 }
 
+execute_test() {
+
+    if [ "$(ping -c 1 "${_TARGET}" 2> /dev/null)" != "" ]; then
+        echo "OK"
+        return 0    
+    fi
+    
+    echo "ERROR"
+    return 1
+}
+
 print_help() {
     print "Check you network connection against a target"
     print_newline
@@ -40,13 +51,22 @@ print_help() {
 
 #parse arguments in order to change parameter values
 
-while getopts t:i:h option
+while getopts t:i:h 2>/dev/null option
 do
-    case "${option}"
-    in
-    t) _TARGET=${OPTARG};;
-    i) _INTERVAL=${OPTARG};;
-    h) print_help;;
+    case "${option}" in
+        t) _TARGET=${OPTARG}
+            ;;
+        i) _INTERVAL=${OPTARG}
+            ;;
+        h) print_help
+            ;;
+        *) print "[Error] There are options that are not recognized."
+            print_newline
+            print "Usage:"
+            print_newline
+            print_help
+            exit
+            ;;
     esac
 done
 
@@ -55,14 +75,12 @@ print_with_timestamp "Pinging ${_TARGET} every ${_INTERVAL} seconds."
 #extract the handle of the first attempt outside the loop, so the loop is shorter and performant
 #we also setup the connected variable right here
 
-ping_execution=`ping -c 1 "${_TARGET}" >/dev/null 2>&1`
-
-if [ $? -ne 0 ] ; then
-    print_with_timestamp "Initial status: disconnected."
-    connected=0
-else
+if [ "$(execute_test)" == "OK" ] ; then
     print_with_timestamp "Initial status: connected."
     connected=1
+else
+    print_with_timestamp "Initial status: disconnected."
+    connected=0
 fi
     
 sleep "${_INTERVAL}"
@@ -71,11 +89,9 @@ sleep "${_INTERVAL}"
 
 while : ; do
 
-    ping_execution=`ping -c 1 "${_TARGET}" >/dev/null 2>&1`
-
-    if [ $? -ne 0 ] ; then
+    if [ "$(execute_test)" == "ERROR" ] ; then
         
-        if (( $connected )) ; then
+        if [ $connected -eq 1 ] ; then
             print_newline
             print_with_timestamp "Connection lost."
         else
@@ -86,7 +102,7 @@ while : ; do
 
     else
       
-        if (( ! $connected )) ; then
+        if [ $connected -eq 0 ] ; then
             print_newline
             print_with_timestamp "Connection reestablished."
         else
