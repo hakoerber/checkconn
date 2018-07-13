@@ -1,7 +1,7 @@
 # checkconn
 Utility to continuously monitor the internet connection.
 
-##setup
+## setup
 
 1) download repository
 
@@ -11,10 +11,10 @@ Utility to continuously monitor the internet connection.
 3) run the script
     ./checkconn.sh
  
-##usage
+## usage
 
 ./checkconn.sh
 
-##help
+## help
 
 ./checkconn.sh -h
